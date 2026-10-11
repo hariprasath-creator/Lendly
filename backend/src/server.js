@@ -49,7 +49,35 @@ app.use(
     legacyHeaders: false,
   })
 );
+// Ensure MongoDB is connected before handling API requests.
+let dbConnectionPromise = null;
 
+async function ensureDatabase(req, res, next) {
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      if (!dbConnectionPromise) {
+        dbConnectionPromise = connectDB().catch((error) => {
+          dbConnectionPromise = null;
+          throw error;
+        });
+      }
+
+      await dbConnectionPromise;
+    }
+
+    next();
+  } catch (error) {
+    console.error("Database connection failed:", error.message);
+
+    res.status(503).json({
+      message: "Database connection unavailable",
+    });
+  }
+}
+
+app.use("/api", ensureDatabase);
+
+// HEALTH CHECK
 // --------------------------------------------
 // HEALTH CHECK
 // GET /api/health
@@ -145,4 +173,8 @@ async function startServer() {
   }
 }
 
-startServer();
+if (process.env.VERCEL) {
+  module.exports = app;
+} else {
+  startServer();
+}
