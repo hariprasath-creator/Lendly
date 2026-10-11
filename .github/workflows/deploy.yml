@@ -1,4 +1,3 @@
-
 # Automatically build and deploy Lendly to GitHub Pages.
 
 name: Deploy Lendly
@@ -26,11 +25,9 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
-      # Download the project source.
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Install Node.js for the Vite build.
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -38,27 +35,25 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      # Configure GitHub Pages deployment.
-      - name: Configure Pages
+      - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
-      # Install the frontend packages.
-      - name: Install dependencies
+      - name: Install frontend dependencies
         working-directory: frontend
         run: npm ci
 
-      # Build the website.
+      # Use the hosted backend instead of localhost:5000.
       - name: Build frontend
         working-directory: frontend
+        env:
+          VITE_API_URL: https://lendly-teal.vercel.app/api
         run: npm run build
 
-      # Upload the generated static website.
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: frontend/dist
 
-      # Publish the website.
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
