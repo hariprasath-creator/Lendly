@@ -1,8 +1,71 @@
-node_modules/
-**/node_modules/
+
+# Automatically build and deploy the Lendly frontend to GitHub Pages.
+
+name: Deploy Lendly
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+
+    steps:
+      # Download the repository source.
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      # Install Node.js for the Vite build.
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      # Prepare GitHub Pages deployment.
+      - name: Configure Pages
+        uses: actions/configure-pages@v6
+
+      # Install frontend dependencies.
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      # Compile the React frontend.
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+      # Upload the Vite production output.
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: frontend/dist
+
+      # Publish the site.
+      - name: Deploy site
+        id: deployment
+        uses: actions/deploy-pages@v5
+/backend/.env
+/backend/node_modules/
+/frontend/node_modules/
+/frontend/dist/
 **/.env
-.env
-**/.env.local
-frontend/dist/
-*.log
-*.pem
+**/.env.*
+**/node_modules/
